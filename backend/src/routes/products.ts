@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /api/products?categoryId=1
 router.get('/', async (req, res) => {

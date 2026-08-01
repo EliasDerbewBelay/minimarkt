@@ -3,6 +3,7 @@ import cors from 'cors'
 import categoriesRouter from './routes/categories'
 import productRouter from './routes/products'
 import orderRouter from './routes/orders'
+import authRouter from './routes/auth'
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 app.use('/api/categories', categoriesRouter);
 app.use('/api/products', productRouter);
 app.use('/api/orders', orderRouter);
+app.use('/api/auth', authRouter)
 
 app.use((req, res) => {
   res.status(404).json({error: 'Not found'});

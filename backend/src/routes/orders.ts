@@ -1,24 +1,28 @@
-import { Router } from 'express';
-import { prisma } from '../db';
+import { Router } from "express";
+import { prisma } from "../db";
+import { requireAuth, AuthRequest } from "../middleware/auth";
 
-const router = Router();
+const router: Router = Router();
 
-// GET /api/orders/:userId
-router.get('/user/:userId', async (req, res) => {
+router.use(requireAuth);
+
+// GET /api/orders  (current user's orders)
+router.get("/", async (req: AuthRequest, res) => {
   const orders = await prisma.order.findMany({
-    where: { userId: Number(req.params.userId) },
+    where: { userId: req.userId! },
     include: { orderItems: { include: { product: true } } },
   });
   res.json(orders);
 });
 
 // POST /api/orders
-// body: { userId: 1, items: [{ productId: 1, quantity: 2 }] }
-router.post('/', async (req, res) => {
-  const { userId, items } = req.body;
+// body: { items: [{ productId: 1, quantity: 2 }] }
+router.post("/", async (req: AuthRequest, res) => {
+  const { items } = req.body;
+  const userId = req.userId!;
 
-  if (!userId || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: 'userId and items are required' });
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "items are required" });
   }
 
   try {
@@ -31,7 +35,8 @@ router.post('/', async (req, res) => {
       const orderItemsData = items.map((item: any) => {
         const product = products.find((p) => p.id === item.productId);
         if (!product) throw new Error(`Product ${item.productId} not found`);
-        if (product.stock < item.quantity) throw new Error(`Insufficient stock for ${product.name}`);
+        if (product.stock < item.quantity)
+          throw new Error(`Insufficient stock for ${product.name}`);
 
         total += Number(product.price) * item.quantity;
         return {
@@ -42,11 +47,7 @@ router.post('/', async (req, res) => {
       });
 
       const newOrder = await tx.order.create({
-        data: {
-          userId,
-          total,
-          orderItems: { create: orderItemsData },
-        },
+        data: { userId, total, orderItems: { create: orderItemsData } },
         include: { orderItems: true },
       });
 
