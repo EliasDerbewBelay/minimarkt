@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const path = mode === "login" ? "auth/login" : "/auth/signup";
+      const path = mode === "login" ? "/auth/login" : "/auth/signup";
       const body =
         mode === "login" ? { email, password } : { email, password, name };
 

@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { Product } from "@/lib/types";
-import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { useCart } from "@/lib/cart-context";
 
-export default function Home() {
+export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const { user, logout } = useAuth();
+  const { items, addItem } = useCart();
 
   useEffect(() => {
     apiFetch("/products")
@@ -19,28 +22,34 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="p-8">Loaidng Products ....</p>;
+  if (loading) return <p className="p-8">Loading products...</p>;
   if (error) return <p className="p-8 text-red-600">Error: {error}</p>;
+
   return (
     <main className="max-w-5xl mx-auto p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Minimart</h1>
-        {user ? (
-          <div className="flex items-center gap-3 text-sm">
-            <span>Hi, {user.name}</span>
-            <button onClick={logout} className="underline">
-              Log out
-            </button>
-          </div>
-        ) : (
-          <Link href="/login" className="underline text-sm">
-            Log in
+        <div className="flex items-center gap-4 text-sm">
+          <Link href="/cart" className="underline">
+            Cart ({items.length})
           </Link>
-        )}
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span>Hi, {user.name}</span>
+              <button onClick={logout} className="underline">
+                Log out
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="underline">
+              Log in
+            </Link>
+          )}
+        </div>
       </div>
-      <h1 className="text-2xl font-bold mb-6">Minimart</h1>
+
       {products.length === 0 ? (
-        <p className="text-gray-500">No product yet.</p>
+        <p className="text-gray-500">No products yet.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {products.map((product) => (
@@ -50,12 +59,19 @@ export default function Home() {
               <p className="text-sm text-gray-600 mb-2">
                 {product.description}
               </p>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-2">
                 <span className="font-bold">${product.price}</span>
                 <span className="text-xs text-gray-500">
                   {product.stock} in stock
                 </span>
               </div>
+              <button
+                onClick={() => addItem(product)}
+                disabled={product.stock === 0}
+                className="w-full bg-black text-white rounded py-1.5 text-sm disabled:opacity-40"
+              >
+                {product.stock === 0 ? "Out of stock" : "Add to cart"}
+              </button>
             </div>
           ))}
         </div>
